@@ -168,9 +168,13 @@ def checkActionsInNonActionButtons(widget):
                 else:
                     widget["text"] = ""
                 if "rules" in widget:
-                    for r in widget["rules"]["rule"]:
-                        if r["@prop_id"] == "line_color":
-                            widget["rules"]["rule"].remove(r)
+                    if type(widget["rules"]["rule"]) == list:
+                        for r in widget["rules"]["rule"]:
+                            if r["@prop_id"] == "line_color":
+                                widget["rules"]["rule"].remove(r)
+                    else:
+                        if widget["rules"]["rule"]["@prop_id"] == "line_color":
+                                widget["rules"]["rule"].remove(r)
 
 
 
@@ -347,7 +351,7 @@ failed to convert the GroupContainer widget.\nTry running converter with --fixGr
                 parseWidget(w, spacing+" ", level+1, widget)
     elif widget["@type"] == "action_button" :
         if "text" in widget:
-            if widget["text"] == "EXIT" or widget["text"] == "Exit":
+            if widget["text"] == "EXIT" or widget["text"] == "Exit" or widget["text"] == "Cancel":
                 widget["actions"]["action"] = fixExitButton()
         replaceOpiExtenstion(widget["actions"]["action"])
         replaceDataBrowserScript(widget)
