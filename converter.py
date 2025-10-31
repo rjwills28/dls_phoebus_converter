@@ -18,6 +18,7 @@ ap.add_argument("-t", "--tfile", required=False, help="Template file")
 ap.add_argument("-p", "--pname", required=False, help="Databrowser plot file to open in action")
 ap.add_argument("--fixGroup", action="store_true", help="Fix grouping container")
 ap.add_argument("--nomodify", action="store_true", help="Don't modify anything after the Phoebus conversion")
+ap.add_argument("--replaceTab", action="store_true", help="Replace actions that open in tabs to open in standalone")
 args = vars(ap.parse_args())
 
 infile = args["file"]
@@ -44,6 +45,7 @@ replaceDBScript = False
 fixOpenActionName = False
 fixActionMacroName = False
 createSymImages = False
+replaceActionTab = False
 
 
 
@@ -116,8 +118,11 @@ def checkRule(widget):
         if type(widget["rules"]["rule"]) is list:
             for r in widget["rules"]["rule"]:
                 ruleExpr = r["exp"]
-                for e in ruleExpr:
-                    e["@bool_exp"] = checkLegacySev(e["@bool_exp"])
+                if type(ruleExpr) == list:
+                    for e in ruleExpr:
+                        e["@bool_exp"] = checkLegacySev(e["@bool_exp"])
+                else:
+                    ruleExpr["@bool_exp"] = checkLegacySev(ruleExpr["@bool_exp"])
         else:
             ruleExpr = widget["rules"]["rule"]["exp"]
             if type(ruleExpr) is list:
@@ -144,6 +149,20 @@ def replaceOpiExtenstion(action):
         opi = action["file"]
         bob = opi.replace(".opi", ".bob")
         action["file"] = bob
+
+
+def replaceOpenInTab(actions):
+    global replaceActionTab
+    if type(actions["action"]) == list:
+        acts = actions["action"]
+    else:
+        acts = [actions["action"]]
+    for action in acts:
+        if action["@type"] == "open_display":
+            if action["target"] == "tab":
+                action["target"] = "standalone"
+                replaceActionTab = True
+
 
 def checkActionsInNonActionButtons(widget):
     if "actions" in widget:
@@ -355,6 +374,8 @@ failed to convert the GroupContainer widget.\nTry running converter with --fixGr
                 widget["actions"]["action"] = fixExitButton()
         replaceOpiExtenstion(widget["actions"]["action"])
         replaceDataBrowserScript(widget)
+        if args["replaceTab"]:
+            replaceOpenInTab(widget["actions"])
     elif widget["@type"] == "symbol":
         if "actions" in widget:
             if widget["actions"] != None:
@@ -457,6 +478,8 @@ def main():
         print("-> Fixed Open Display action that contains the $name macro that does not get parsed")
     if createSymImages:
         print("-> Created new images for Symbol widget from original")
+    if replaceActionTab:
+        print("-> Replace open display target=tab with target=standalone")
 
 if __name__ == "__main__":
     main()
